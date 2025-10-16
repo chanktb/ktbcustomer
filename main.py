@@ -7,7 +7,7 @@ import pandas as pd
 load_dotenv()
 
 from shopify_client import get_new_customers_from_shopify
-from google_sheets_client import get_gsheet_client, update_gsheet, get_all_records_as_dataframe
+from google_sheets_client import get_gsheet_client, update_gsheet
 from sendy_client import sync_customers_to_sendy
 from telegram_notifier import send_telegram_message
 from data_cleaner import clean_customer_data
@@ -32,7 +32,7 @@ def run():
     SENDY_URL = os.getenv("SENDY_URL")
     SENDY_API_KEY = os.getenv("SENDY_API_KEY")
     COMBINED_GOOGLE_SHEET_NAME = os.getenv("COMBINED_GOOGLE_SHEET_NAME") 
-    COMBINED_WORKSHEET_NAME = "All_Customers"
+    COMBINED_WORKSHEET_NAME = "New_Customers_Weekly"
 
     with open("google_creds.json", "w") as f:
         f.write(GOOGLE_CREDS_JSON)
@@ -92,40 +92,35 @@ def run():
         
         full_report.append("\n".join(site_report))
 
-    if not any_errors:
+    if not any_errors and all_new_customers_dfs:
         try:
-            print("\nTổng hợp dữ liệu để cập nhật Google Sheet...")
+            print("\nTổng hợp dữ liệu khách hàng MỚI từ tất cả các site...")
+            # Chỉ cần gộp khách hàng MỚI của lần chạy này
+            new_customers_df = pd.concat(all_new_customers_dfs, ignore_index=True)
+            new_customers_df.drop_duplicates(subset=['email'], inplace=True)
             
-            # BƯỚC MỚI 1: Đọc dữ liệu cũ từ Google Sheet
-            print("Đọc dữ liệu khách hàng cũ từ Google Sheet...")
-            existing_customers_df = get_all_records_as_dataframe(gsheet_client, COMBINED_GOOGLE_SHEET_NAME, COMBINED_WORKSHEET_NAME)
+            print(f"Tổng số khách hàng mới và duy nhất để thêm vào Google Ads là: {len(new_customers_df)}")
             
-            # BƯỚC MỚI 2: Gộp dữ liệu mới
-            if all_new_customers_dfs:
-                new_customers_df = pd.concat(all_new_customers_dfs, ignore_index=True)
-                
-                # BƯỚC MỚI 3: Gộp cũ và mới, sau đó lọc trùng
-                final_df = pd.concat([existing_customers_df, new_customers_df], ignore_index=True)
-                final_df.drop_duplicates(subset=['email'], keep='last', inplace=True)
-            else:
-                # Nếu không có khách mới, danh sách cuối cùng chính là danh sách cũ
-                final_df = existing_customers_df
+            # Thêm các cột trống mà Google Ads yêu cầu
+            new_customers_df['country_code'] = ''
+            new_customers_df['postal_code'] = ''
 
-            print(f"Tổng số khách hàng duy nhất sau khi cập nhật là: {len(final_df)}")
-            
-            # BƯỚC MỚI 4: Cập nhật lại toàn bộ danh sách tổng hợp
-            update_success = update_gsheet(gsheet_client, COMBINED_GOOGLE_SHEET_NAME, COMBINED_WORKSHEET_NAME, final_df)
+            # Ghi đè chỉ khách hàng MỚI vào Google Sheet
+            update_success = update_gsheet(gsheet_client, COMBINED_GOOGLE_SHEET_NAME, COMBINED_WORKSHEET_NAME, new_customers_df)
             if not update_success:
-                raise Exception("Cập nhật Google Sheets chung thất bại.")
+                raise Exception("Cập nhật Google Sheets thất bại.")
             
-            full_report.append(f"\n📊 *Google Sheets Tổng hợp:* Cập nhật thành công. Tổng số khách hàng trong danh sách là {len(final_df)}.")
+            full_report.append(f"\n📊 *Google Sheets:* Ghi thành công {len(new_customers_df)} khách hàng mới để Google Ads cộng dồn.")
         
         except Exception as e:
             any_errors = True
-            print(f"LỖI khi xử lý Google Sheet chung: {e}")
-            full_report.append(f"\n🚨 *Lỗi Google Sheet chung:* `{e}`")
+            print(f"LỖI khi xử lý Google Sheet: {e}")
+            full_report.append(f"\n🚨 *Lỗi Google Sheet:* `{e}`")
+    elif any_errors:
+        print("\nBỏ qua việc cập nhật Google Sheet do có lỗi xảy ra ở các bước trước.")
     else:
-        print("\nBỏ qua việc cập nhật Google Sheet chung do có lỗi xảy ra ở các bước trước.")
+        print("\nKhông có khách hàng mới nào để cập nhật lên Google Sheet.")
+
 
     final_report = "\n\n".join(full_report)
     if any_errors:

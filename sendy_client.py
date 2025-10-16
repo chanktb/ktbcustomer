@@ -55,8 +55,8 @@ def sync_customers_to_sendy(sendy_url, api_key, list_id, dataframe):
         if not customer['email']:
             continue
         
-        # In tiến trình để theo dõi
-        print(f"Đang xử lý {index + 1}/{total}: {customer['email']}", end='\r')
+        # Thêm các khoảng trắng vào cuối để xóa sạch dòng cũ
+        print(f"Đang xử lý {index + 1}/{total}: {customer['email']}          ", end='\r')
             
         status, message = subscribe_to_sendy_single(sendy_url, api_key, list_id, customer)
 
