@@ -6,15 +6,33 @@
     "shopify_shop_url_secret": "SHOPIFY_SHOP_URL_1",
     "shopify_api_key_secret": "SHOPIFY_API_KEY_1",
     "shopify_password_secret": "SHOPIFY_PASSWORD_1",
-    "sendy_list_id_secret": "SENDY_LIST_ID_1"
+    "sendy_list_ids_secret": "SENDY_LIST_IDS_1"
   },
   {
-    "site_name": "My Second Store",
-    "enabled": false,
-    "state_file": "last_run_store_2.txt",
+    "site_name": "ND Nail Supply",
+    "enabled": true,
+    "state_file": "last_run_store_nd.txt",
     "shopify_shop_url_secret": "SHOPIFY_SHOP_URL_2",
     "shopify_api_key_secret": "SHOPIFY_API_KEY_2",
     "shopify_password_secret": "SHOPIFY_PASSWORD_2",
-    "sendy_list_id_secret": "SENDY_LIST_ID_2"
+    "sendy_list_ids_secret": "SENDY_LIST_IDS_2"
+  },
+  {
+    "site_name": "Lavis Nails",
+    "enabled": true,
+    "state_file": "last_run_store_lavis.txt",
+    "shopify_shop_url_secret": "SHOPIFY_SHOP_URL_3",
+    "shopify_api_key_secret": "SHOPIFY_API_KEY_3",
+    "shopify_password_secret": "SHOPIFY_PASSWORD_3",
+    "sendy_list_ids_secret": "SENDY_LIST_IDS_3"
+  },
+  {
+    "site_name": "LDS Nails",
+    "enabled": true,
+    "state_file": "last_run_store_lds.txt",
+    "shopify_shop_url_secret": "SHOPIFY_SHOP_URL_4",
+    "shopify_api_key_secret": "SHOPIFY_API_KEY_4",
+    "shopify_password_secret": "SHOPIFY_PASSWORD_4",
+    "sendy_list_ids_secret": "SENDY_LIST_IDS_4"
   }
 ]

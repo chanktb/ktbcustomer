@@ -10,8 +10,9 @@ def get_new_customers_from_shopify(shop_url, api_key, password, start_date):
     """
     end_date = datetime.utcnow().isoformat() + "Z"
     
-    # URL ban đầu chỉ có thông tin trang đầu tiên
-    endpoint = f"/admin/api/2024-04/customers.json?created_at_min={start_date}&created_at_max={end_date}&limit=250"
+    # Yêu cầu các trường cần thiết, bao gồm cả 2 trường mới để lọc
+    fields = "email,first_name,last_name,phone,tags,accepts_marketing,orders_count"
+    endpoint = f"/admin/api/2024-04/customers.json?created_at_min={start_date}&created_at_max={end_date}&limit=250&fields={fields}"
     next_page_url = f"https://{shop_url}{endpoint}"
     
     all_customers = []
@@ -24,22 +25,18 @@ def get_new_customers_from_shopify(shop_url, api_key, password, start_date):
             response = requests.get(next_page_url, auth=(api_key, password))
             response.raise_for_status()
             
-            # Thêm khách hàng từ trang hiện tại vào danh sách tổng
             customers_data = response.json().get('customers', [])
             if customers_data:
                 all_customers.extend(customers_data)
                 print(f"Đã lấy {len(customers_data)} khách hàng. Tổng số: {len(all_customers)}.")
             
-            # Tìm link của trang tiếp theo trong header của response
             next_page_url = None # Reset lại
             if 'Link' in response.headers:
                 links = response.headers['Link'].split(', ')
                 for link in links:
                     if 'rel="next"' in link:
-                        # Trích xuất URL từ trong <...>
                         next_page_url = link[link.find('<')+1:link.find('>')]
-                        # Shopify giới hạn tốc độ gọi API, đợi một chút trước khi gọi trang tiếp
-                        time.sleep(0.5) 
+                        time.sleep(0.5) # Nghỉ 0.5s để tránh rate limit của Shopify
                         break
 
         except requests.exceptions.RequestException as e:
@@ -58,7 +55,9 @@ def get_new_customers_from_shopify(shop_url, api_key, password, start_date):
             'first_name': customer.get('first_name', ''),
             'last_name': customer.get('last_name', ''),
             'phone': customer.get('phone', ''),
-            'tags': customer.get('tags', '')
+            'tags': customer.get('tags', ''),
+            'accepts_marketing': customer.get('accepts_marketing'),
+            'orders_count': customer.get('orders_count', 0)
         })
     
     print(f"Lấy thành công TOÀN BỘ {len(customer_list)} khách hàng mới.")
